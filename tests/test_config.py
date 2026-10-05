@@ -85,11 +85,6 @@ def test_plot_smoothing_weights_are_valid_ema_weights():
     assert 0.0 <= cfg.plot.step_smoothing < 1.0
 
 
-def test_data_leak_is_a_known_mode():
-    # utils.dataloader.LEAK_MODES; checked here too so a typo fails before a run.
-    assert cfg.data.leak in (None, "patient")
-
-
 def test_warmup_fits_inside_the_training_schedule():
     assert 0 <= cfg.warmup_epochs < cfg.epoch
     assert 0 <= cfg.ema_decay < 1

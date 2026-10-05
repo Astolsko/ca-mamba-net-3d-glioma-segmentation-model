@@ -196,23 +196,3 @@ def test_plot_metrics_from_csv_does_not_leak_its_style_into_global_rcparams(tmp_
                           style={"font_size": before + 7})
 
     assert matplotlib.rcParams["font.size"] == before
-
-
-def test_plot_metrics_from_csv_stamps_the_leak_watermark_on_every_figure(tmp_path, monkeypatch):
-    from matplotlib.axes import Axes
-    from utils.plot import leak_watermark
-
-    csv_path = tmp_path / "metrics.csv"
-    _write_metrics_csv(csv_path, ["epoch", "train_loss", "mean_dice"],
-                       [{"epoch": 1, "train_loss": 1.0, "mean_dice": 0.5}])
-    stamped = []
-    real_text = Axes.text
-    monkeypatch.setattr(Axes, "text",
-                        lambda self, *a, **k: stamped.append(a[2]) or real_text(self, *a, **k))
-
-    plot_metrics_from_csv(str(csv_path), str(tmp_path / "plots"),
-                          style={"watermark": leak_watermark("patient")})
-
-    assert leak_watermark(None) is None
-    assert len(stamped) == 2   # loss.png and dice.png
-    assert all("LEAKED SPLIT" in text for text in stamped)

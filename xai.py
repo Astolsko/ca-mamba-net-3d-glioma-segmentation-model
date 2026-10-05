@@ -1,23 +1,3 @@
-"""Run the explainability suite against a finished run's checkpoint.
-
-    python xai.py --run v1-run3                  # everything
-    python xai.py --run v1-run3 --only cam       # one component
-
-Components (see utils/xai.py for the reasoning behind each):
-    cam         X1  Seg-Grad-CAM / HiResCAM at four decoder depths
-    modality    X2  Dice cost of ablating each MRI modality
-    uncertainty X3  MC-dropout maps + error-retention curve
-    rollout     X4  Attention rollout through the 12 ViT blocks, or for a Mamba run
-                    the hidden-attention rollout of its deepest stage
-    faithful    X5  Deletion curves, localisation scores, randomisation sanity check
-
-Writes figures, per-component JSON and a summary.json into logs/<run>/xai/.
-Nothing here retrains or modifies the checkpoint on disk.
-
-train.py runs the same suite automatically at the end of a fresh run (see
-cfg.xai.run_after_training) — this script is for re-running it against an
-existing checkpoint, or for iterating on one component.
-"""
 import argparse
 import os
 

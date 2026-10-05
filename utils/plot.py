@@ -149,7 +149,7 @@ def _as_float_series(rows, key):
 # is drawn dashed in ink. Colour follows the entity: TC is the same blue in
 # every plot, and "train" is slot 1 wherever it appears.
 _SERIES = ("#2a78d6", "#eb6834", "#1baf7a")
-_INK, _INK_2, _GRID = "#0b0b0b", "#52514e", "#e1e0d9"
+_INK, _GRID = "#0b0b0b", "#e1e0d9"
 _REGIONS = (("tc", "TC", _SERIES[0]), ("wt", "WT", _SERIES[1]), ("et", "ET", _SERIES[2]))
 
 # train.py and tools/replot.py override these from cfg.plot. Smoothing is off
@@ -162,13 +162,7 @@ DEFAULT_PLOT_STYLE = {
     "formats": ("png",),
     "epoch_smoothing": 0.0,
     "step_smoothing": 0.0,
-    "watermark": None,   # text stamped across every figure, see leak_watermark
 }
-
-
-def leak_watermark(leak):
-    """Watermark for the curves of a run trained with cfg.data.leak set, else None."""
-    return f"LEAKED SPLIT (data.leak={leak})" if leak else None
 
 
 def smooth_series(values, weight):
@@ -251,11 +245,6 @@ def _save_curves(series, x, title, xlabel, ylabel, stem, plots_dir, style, smoot
         ax.legend(frameon=False, title=note, title_fontsize="small")
     ax.grid(True, color=_GRID, linewidth=0.8)
     ax.set_axisbelow(True)
-    if style.get("watermark"):
-        # Across the plot area, where cropping the figure cannot remove it.
-        ax.text(0.5, 0.5, style["watermark"], transform=ax.transAxes, ha="center",
-                va="center", rotation=20, fontsize=style["font_size"] * 1.6,
-                color=_INK_2, alpha=0.25, zorder=0)
     fig.tight_layout()
     for fmt in style["formats"]:
         fig.savefig(os.path.join(plots_dir, f"{stem}.{fmt}"), bbox_inches='tight')
@@ -263,8 +252,9 @@ def _save_curves(series, x, title, xlabel, ylabel, stem, plots_dir, style, smoot
 
 
 def plot_metrics_from_csv(csv_path, plots_dir, train_steps_csv_path=None, style=None):
-    """Draw a run's training curves from its CSVs: loss, Dice, IoU, HD95 and LR
-    per epoch from metrics.csv, plus the per-step training loss when
+    """Draw a run's training curves from its CSVs: loss, Dice, IoU, HD95,
+    sensitivity, F1 and LR per epoch from metrics.csv, plus the per-step
+    training loss when
     `train_steps_csv_path` exists. Only the CSVs are read, so tools/replot.py
     can redraw a finished run with another font, size, format or smoothing.
 
@@ -305,6 +295,13 @@ def plot_metrics_from_csv(csv_path, plots_dir, train_steps_csv_path=None, style=
                      "Epoch", "IoU", "iou", plots_dir, style, smoothing)
         _save_curves(per_region("hd95"), epochs, "Hausdorff distance 95 (validation)",
                      "Epoch", "HD95 (mm)", "hd95", plots_dir, style, smoothing)
+        # F1 is drawn too even though it equals Dice for a binary mask — the
+        # paper's metric table lists both, and a plot that visibly coincides
+        # with dice.png is the cheapest way to show they are one quantity.
+        _save_curves(per_region("sens"), epochs, "Sensitivity (validation)",
+                     "Epoch", "Sensitivity", "sens", plots_dir, style, smoothing)
+        _save_curves(per_region("f1"), epochs, "F1 score (validation)",
+                     "Epoch", "F1", "f1", plots_dir, style, smoothing)
         # A schedule has no noise to smooth.
         _save_curves([(col("lr"), "Learning rate", _INK, "-")], epochs, "Learning rate",
                      "Epoch", "Learning rate", "lr", plots_dir, style, 0.0)

@@ -1,28 +1,3 @@
-"""Post-hoc explainability for the 3D glioma segmentation model.
-
-Five components, all running against a saved checkpoint — nothing here touches
-the training path:
-
-  X1  Seg-Grad-CAM / HiResCAM at several decoder depths   -> cam_*()
-  X2  Modality attribution by ablation                    -> modality_attribution()
-  X3  MC-dropout predictive uncertainty                   -> mc_dropout_predict()
-  X4  Attention rollout through the 12 ViT blocks         -> attention_rollout()
-      (Mamba encoder: hidden-attention rollout of its deepest stage,
-       mamba_hidden_attention_rollout())
-  X5  Quantitative evaluation of the above                -> deletion_curve(),
-                                                             localization_scores(),
-                                                             sanity_check_randomization()
-
-Why these and not LIME/SHAP: kernel-SHAP on a 128x128x96x4 volume needs
-thousands of forward passes per case, and the superpixel decomposition it needs
-to be tractable destroys exactly the boundary detail that ET segmentation is
-about. Gradient-based (X1, X4) and perturbation-based (X2, X5) families are
-both covered here at a fraction of the cost.
-
-The load-bearing part for a paper is X5. A CAM figure alone is unfalsifiable;
-deletion curves, localisation scores and the Adebayo randomisation test are
-what make the explanations checkable claims.
-"""
 import json
 import os
 
